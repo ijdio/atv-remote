@@ -26,7 +26,7 @@ dependencies = [
     "rumps>=0.4.0",
     # pyatv 0.18.0 passes SRPClientSession(ctx, private) positionally; srptools 2.0
     # made `private` keyword-only, which breaks PIN pairing. Drop once pyatv fixes it.
-    "srptools>=1.0,<2",
+    "srptools>=1.0,<3",
 ]
 
 [project.urls]

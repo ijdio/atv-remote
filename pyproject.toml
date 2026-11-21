@@ -1,8 +1,21 @@
 [project]
 name = "atv-remote"
 version = "0.1.0"
-description = "Apple TV remote: menu bar app + local web remote built on pyatv"
+description = "Control your Apple TV from the macOS menu bar: a native floating remote, keyboard shortcuts and a local web remote, built on pyatv."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["apple-tv", "appletv", "tvos", "remote", "remote-control", "pyatv", "macos", "menu-bar", "airplay"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: MacOS X :: Cocoa",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+    "Topic :: Multimedia :: Video",
+]
 authors = [
     { name = "ijdio", email = "194905743+ijdio@users.noreply.github.com" }
 ]
@@ -12,9 +25,13 @@ dependencies = [
     "pyobjc-framework-webkit>=13.0",
     "rumps>=0.4.0",
     # pyatv 0.18.0 passes SRPClientSession(ctx, private) positionally; srptools 2.0
-    # made `private` keyword-only, which breaks every PIN pairing. Drop when pyatv fixes it.
+    # made `private` keyword-only, which breaks PIN pairing. Drop once pyatv fixes it.
     "srptools>=1.0,<2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ijdio/atv-remote"
+Issues = "https://github.com/ijdio/atv-remote/issues"
 
 [project.scripts]
 atv-remote = "atv_remote.menubar:main"
@@ -32,5 +49,6 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [dependency-groups]
 dev = [
+    "pytest>=9.2.0",
     "ruff>=0.17.6",
 ]

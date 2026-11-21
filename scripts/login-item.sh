@@ -7,14 +7,27 @@ set -euo pipefail
 
 LABEL="local.atv-remote"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN="$ROOT/.venv/bin/atv-remote"
+# Prefer this checkout's venv; fall back to a `uv tool install` on PATH.
+BIN="${ATV_REMOTE_BIN:-$ROOT/.venv/bin/atv-remote}"
+if [[ ! -x "$BIN" ]] && command -v atv-remote >/dev/null; then
+  BIN="$(command -v atv-remote)"
+fi
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/atv-remote.log"
 DOMAIN="gui/$(id -u)"
 
+unload() {
+  launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || return 0
+  # bootout returns before the job is gone; bootstrapping too early fails (EIO).
+  for _ in {1..50}; do
+    launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || return 0
+    sleep 0.2
+  done
+}
+
 case "${1:-}" in
   install)
-    [[ -x "$BIN" ]] || { echo "missing $BIN, run: uv sync" >&2; exit 1; }
+    [[ -x "$BIN" ]] || { echo "atv-remote not found: run 'uv sync' here or 'uv tool install'" >&2; exit 1; }
     mkdir -p "$(dirname "$PLIST")" "$(dirname "$LOG")"
     cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,12 +48,12 @@ case "${1:-}" in
 </plist>
 EOF
     plutil -lint "$PLIST" >/dev/null
-    launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+    unload
     launchctl bootstrap "$DOMAIN" "$PLIST"
     echo "installed $PLIST (log: $LOG)"
     ;;
   uninstall)
-    launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+    unload
     rm -f "$PLIST"
     echo "removed $LABEL"
     ;;

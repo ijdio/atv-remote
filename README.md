@@ -135,8 +135,8 @@ uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
 
-Issues and pull requests are welcome. Please keep changes small, and run the
-checks above before opening a PR.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and
+report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## Credits
 

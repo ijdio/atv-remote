@@ -8,3 +8,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # pyatv 0.18.0 breaks PIN pairing with srptools 2.x (see pyproject.toml).
+      # Remove once pyatv supports it.
+      - dependency-name: srptools
+        versions: [">=2"]

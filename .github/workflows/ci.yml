@@ -13,7 +13,7 @@ jobs:
     # macOS runner: the menu bar app imports PyObjC, which only installs on macOS.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true

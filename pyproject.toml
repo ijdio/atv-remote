@@ -1,0 +1,36 @@
+[project]
+name = "atv-remote"
+version = "0.1.0"
+description = "Apple TV remote: menu bar app + local web remote built on pyatv"
+readme = "README.md"
+authors = [
+    { name = "ijdio", email = "194905743+ijdio@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "pyatv>=0.18.0",
+    "pyobjc-framework-webkit>=13.0",
+    "rumps>=0.4.0",
+    # pyatv 0.18.0 passes SRPClientSession(ctx, private) positionally; srptools 2.0
+    # made `private` keyword-only, which breaks every PIN pairing. Drop when pyatv fixes it.
+    "srptools>=1.0,<2",
+]
+
+[project.scripts]
+atv-remote = "atv_remote.menubar:main"
+atv-remote-web = "atv_remote.web:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.6",
+]

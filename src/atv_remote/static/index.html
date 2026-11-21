@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple TV Remote</title>
+<style>
+  :root {
+    --bg: #ecedf0;
+    --body: linear-gradient(180deg, #fafafb, #e4e5e9);
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --pad: radial-gradient(circle at 50% 35%, #ffffff, #dcdde2 75%);
+    --pad-ring: #c9cad0;
+    --btn: #f6f6f8;
+    --btn-edge: #d2d3d8;
+    --btn-press: #dadbe0;
+    --accent: #0a84ff;
+    --danger: #ff453a;
+    --ok: #30d158;
+    --card: rgba(255,255,255,.7);
+    --shadow: 0 1px 2px rgba(0,0,0,.08), 0 6px 18px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111113;
+      --body: linear-gradient(180deg, #232326, #161618);
+      --fg: #f5f5f7;
+      --muted: #98989d;
+      --pad: radial-gradient(circle at 50% 35%, #3a3a3e, #1e1e21 75%);
+      --pad-ring: #3a3a3f;
+      --btn: #2a2a2d;
+      --btn-edge: #3a3a3f;
+      --btn-press: #3c3c40;
+      --card: rgba(255,255,255,.05);
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    display: flex; justify-content: center;
+  }
+  .remote {
+    width: 100%; max-width: 340px; min-height: 100%;
+    padding: 14px 16px 12px;
+    background: var(--body);
+    display: flex; flex-direction: column; gap: 14px;
+    position: relative;
+  }
+  .remote > * { flex-shrink: 0; }
+  /* top bar */
+  .top { display: flex; align-items: center; gap: 8px; }
+  .device {
+    flex: 1; min-width: 0; position: relative;
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card); border: 1px solid var(--btn-edge);
+    border-radius: 10px; padding: 6px 10px; box-shadow: var(--shadow);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.connected { background: var(--ok); }
+  .dot.offline, .dot.error { background: var(--danger); }
+  .dot.connecting, .dot.scanning, .dot.starting { background: #ffd60a; }
+  .device select {
+    appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+    color: var(--fg); font: inherit; font-weight: 600; flex: 1; min-width: 0;
+    outline: none; cursor: pointer; padding-right: 14px;
+  }
+  .device::after {
+    content: ""; position: absolute; right: 11px; top: 50%; width: 6px; height: 6px;
+    border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg); pointer-events: none;
+  }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 50%; flex: none;
+    border: 1px solid var(--btn-edge); background: var(--btn); color: var(--fg);
+    display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .icon-btn.power.on { color: var(--ok); }
+  .icon-btn:active, .key:active, .key.flash { background: var(--btn-press); transform: scale(.96); }
+  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round; }
+
+  /* now playing */
+  .np {
+    display: flex; gap: 10px; align-items: center; min-height: 64px;
+    background: var(--card); border: 1px solid var(--btn-edge); border-radius: 14px;
+    padding: 8px; box-shadow: var(--shadow);
+  }
+  .np img, .np .art {
+    width: 48px; height: 48px; border-radius: 8px; flex: none; object-fit: cover;
+    background: var(--btn-press);
+  }
+  .np .meta { min-width: 0; flex: 1; }
+  .np .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np .sub { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .bar { height: 3px; border-radius: 2px; background: var(--btn-press); margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--fg); opacity: .6; }
+
+  /* clickpad */
+  .pad-wrap { display: grid; place-items: center; padding: 4px 0; }
+  .pad {
+    width: 228px; height: 228px; border-radius: 50%; position: relative;
+    background: var(--pad); border: 1px solid var(--pad-ring);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.25);
+    touch-action: none; cursor: pointer; outline: none;
+  }
+  .pad:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .pad .center {
+    position: absolute; inset: 33%; border-radius: 50%;
+    border: 1px solid var(--pad-ring); transition: background .12s;
+  }
+  .pad .tick { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--muted); opacity: .55; }
+  .pad .t-up { top: 14px; left: calc(50% - 2.5px); }
+  .pad .t-down { bottom: 14px; left: calc(50% - 2.5px); }
+  .pad .t-left { left: 14px; top: calc(50% - 2.5px); }
+  .pad .t-right { right: 14px; top: calc(50% - 2.5px); }
+  .pad .glow {
+    position: absolute; width: 70px; height: 70px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--fg) 18%, transparent), transparent 70%);
+    opacity: 0; transform: translate(-50%, -50%); transition: opacity .25s;
+  }
+  .pad .glow.on { opacity: 1; transition: opacity 0s; }
+
+  /* keys */
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; justify-items: center; }
+  .key {
+    width: 62px; height: 62px; border-radius: 50%;
+    border: 1px solid var(--btn-edge); background: var(--btn); color: var(--fg);
+    display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform .06s, background .06s;
+  }
+  .key svg { width: 22px; height: 22px; }
+  .vol {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--btn-edge); background: var(--btn); border-radius: 22px;
+    box-shadow: var(--shadow); overflow: hidden; height: 44px;
+  }
+  .vol button {
+    border: 0; background: transparent; color: var(--fg); height: 100%; width: 72px;
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .vol button:active, .vol button.flash { background: var(--btn-press); }
+  .vol span { color: var(--muted); font-size: 12px; letter-spacing: .02em; }
+
+  /* more */
+  details { border-top: 1px solid var(--btn-edge); padding-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 12px; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; } details[open] summary::before { content: "▾ "; }
+  .more { display: grid; gap: 8px; margin-top: 10px; }
+  .row { display: flex; gap: 6px; }
+  .row > select, .row > input {
+    flex: 1; min-width: 0; font: inherit; color: var(--fg);
+    background: var(--card); border: 1px solid var(--btn-edge); border-radius: 8px; padding: 6px 8px;
+    -webkit-user-select: text; user-select: text;
+  }
+  .pill {
+    font: inherit; font-weight: 500; color: var(--fg); background: var(--btn);
+    border: 1px solid var(--btn-edge); border-radius: 8px; padding: 6px 10px; cursor: pointer; white-space: nowrap;
+  }
+  .pill:active { background: var(--btn-press); }
+  .pill.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .hint { color: var(--muted); font-size: 11px; text-align: center; line-height: 1.6; }
+  kbd { font: 10.5px ui-monospace, SFMono-Regular, monospace; border: 1px solid var(--btn-edge); border-radius: 4px; padding: 0 3px; }
+
+  /* overlay (pairing / not connected) */
+  .overlay {
+    position: absolute; inset: 60px 0 0; display: none; padding: 24px 22px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 { font-size: 16px; margin: 0; }
+  .overlay p { color: var(--muted); margin: 0; max-width: 260px; }
+  .pin {
+    font: 600 28px/1 ui-monospace, SFMono-Regular, monospace; letter-spacing: .35em; text-align: center;
+    width: 170px; padding: 10px 0 10px .35em; border-radius: 12px; color: var(--fg);
+    background: var(--card); border: 1px solid var(--btn-edge); outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  .pin:focus { border-color: var(--accent); }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--btn-edge);
+             border-top-color: var(--fg); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 14px; transform: translate(-50%, 20px); opacity: 0;
+    background: var(--fg); color: var(--bg); padding: 7px 12px; border-radius: 9px; font-size: 12px;
+    max-width: 300px; transition: .2s; pointer-events: none; z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<main class="remote">
+  <div class="top">
+    <label class="device" title="Apple TV">
+      <span class="dot" id="dot"></span>
+      <select id="device" aria-label="Apple TV"><option>Scanning…</option></select>
+    </label>
+    <button class="icon-btn power" id="power" data-cmd="power" title="Power (P)" aria-label="Power">
+      <svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg>
+    </button>
+  </div>
+
+  <section class="np" id="np" aria-live="polite">
+    <div class="art" id="art-ph"></div>
+    <img id="art" alt="" hidden>
+    <div class="meta">
+      <div class="title" id="np-title">Nothing playing</div>
+      <div class="sub" id="np-sub">&nbsp;</div>
+      <div class="bar"><i id="np-bar"></i></div>
+    </div>
+  </section>
+
+  <div class="pad-wrap">
+    <div class="pad" id="pad" tabindex="0" role="application"
+         aria-label="Clickpad: click edges to move, centre to select, drag to swipe">
+      <span class="tick t-up"></span><span class="tick t-down"></span>
+      <span class="tick t-left"></span><span class="tick t-right"></span>
+      <div class="center"></div>
+      <div class="glow" id="glow"></div>
+    </div>
+  </div>
+
+  <div class="keys">
+    <button class="key" data-cmd="menu" title="Back (Esc)" aria-label="Back">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="key" data-cmd="home" data-hold="home_hold" title="Home (H) · hold for Control Centre" aria-label="Home">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg>
+    </button>
+    <button class="key" data-cmd="play_pause" title="Play/Pause (Space)" aria-label="Play or pause">
+      <svg viewBox="0 0 24 24"><path d="M4 6l7 6-7 6z" fill="currentColor"/><path d="M15 6v12M20 6v12"/></svg>
+    </button>
+    <button class="key" data-cmd="skip_backward" title="Skip back ([)" aria-label="Skip back">
+      <svg viewBox="0 0 24 24"><path d="M11 18l-7-6 7-6z" fill="currentColor"/><path d="M20 18l-7-6 7-6z" fill="currentColor"/></svg>
+    </button>
+    <button class="key" data-cmd="select_hold" title="Long-press select (context menu)" aria-label="Long press select">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+    </button>
+    <button class="key" data-cmd="skip_forward" title="Skip forward (])" aria-label="Skip forward">
+      <svg viewBox="0 0 24 24"><path d="M4 18l7-6-7-6z" fill="currentColor"/><path d="M13 18l7-6-7-6z" fill="currentColor"/></svg>
+    </button>
+  </div>
+
+  <div class="vol">
+    <button data-cmd="volume_down" title="Volume down (−)" aria-label="Volume down">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+    </button>
+    <span>VOLUME</span>
+    <button data-cmd="volume_up" title="Volume up (+)" aria-label="Volume up">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
+    </button>
+  </div>
+
+  <details id="more">
+    <summary>More</summary>
+    <div class="more">
+      <div class="row">
+        <select id="apps" aria-label="App"><option value="">Apps…</option></select>
+        <button class="pill" id="launch">Open</button>
+      </div>
+      <form class="row" id="textform">
+        <input id="text" placeholder="Type into a search field…" autocomplete="off">
+        <button class="pill">Send</button>
+      </form>
+      <div class="row">
+        <button class="pill" data-cmd="home_double">App switcher</button>
+        <button class="pill" data-cmd="home_hold">Control Centre</button>
+        <button class="pill" id="rescan">Rescan</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="hint">
+    <kbd>←↑→↓</kbd> move · <kbd>⏎</kbd> select · <kbd>esc</kbd> back · <kbd>space</kbd> play<br>
+    <kbd>H</kbd> home · <kbd>+</kbd><kbd>−</kbd> volume · <kbd>[</kbd><kbd>]</kbd> skip · <kbd>P</kbd> power
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null;
+let pairing = null;          // {protocol, step, total} while entering a PIN
+let pairBusy = false;
+let appsLoadedFor = null;
+
+async function api(path, body) {
+  const opts = body === undefined && !path.startsWith("POST ")
+    ? {} : { method: "POST", headers: { "X-ATV-Remote": "1", "Content-Type": "application/json" },
+             body: JSON.stringify(body ?? {}) };
+  const res = await fetch("/api/" + path.replace(/^POST /, ""), opts);
+  const data = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
+  if (!res.ok) throw new Error(data?.error || res.statusText);
+  return data;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function flash(el) {
+  if (!el) return; el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 120);
+}
+
+async function send(cmd, el) {
+  flash(el);
+  try { await api("POST command/" + cmd); }
+  catch (e) { toast(e.message); }
+}
+
+// ---- buttons (tap, optional hold) ----
+document.querySelectorAll("[data-cmd]").forEach((el) => {
+  const hold = el.dataset.hold;
+  if (!hold) { el.addEventListener("click", () => send(el.dataset.cmd)); return; }
+  let timer, held;
+  el.addEventListener("pointerdown", () => { held = false; timer = setTimeout(() => { held = true; send(hold); }, 600); });
+  el.addEventListener("pointerup", () => { clearTimeout(timer); if (!held) send(el.dataset.cmd); });
+  el.addEventListener("pointerleave", () => clearTimeout(timer));
+});
+
+// ---- clickpad ----
+const pad = $("pad"), glow = $("glow");
+let down = null;
+function dirFrom(dx, dy) { return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"); }
+function showGlow(x, y) {
+  glow.style.left = x + "px"; glow.style.top = y + "px";
+  glow.classList.add("on"); setTimeout(() => glow.classList.remove("on"), 90);
+}
+pad.addEventListener("pointerdown", (e) => {
+  pad.setPointerCapture(e.pointerId);
+  const r = pad.getBoundingClientRect();
+  down = { x: e.clientX, y: e.clientY, r, held: false,
+           timer: setTimeout(() => { down.held = true; send("select_hold"); }, 650) };
+});
+pad.addEventListener("pointermove", (e) => {
+  if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12) clearTimeout(down.timer);
+});
+pad.addEventListener("pointerup", (e) => {
+  if (!down) return;
+  clearTimeout(down.timer);
+  const { r, held } = down; const mx = e.clientX - down.x, my = e.clientY - down.y;
+  down = null;
+  if (held) return;
+  const lx = e.clientX - r.left, ly = e.clientY - r.top;
+  showGlow(lx, ly);
+  if (Math.hypot(mx, my) > 30) return send(dirFrom(mx, my));          // swipe
+  const cx = lx - r.width / 2, cy = ly - r.height / 2;
+  if (Math.hypot(cx, cy) < r.width * 0.17) return send("select");       // centre
+  send(dirFrom(cx, cy));                                                // edge
+});
+// trackpad two-finger swipe / scroll wheel over the pad
+let wx = 0, wy = 0, wLast = 0;
+pad.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  wx += e.deltaX; wy += e.deltaY;
+  const now = performance.now();
+  if (now - wLast < 140) return;
+  if (Math.max(Math.abs(wx), Math.abs(wy)) > 45) { wLast = now; send(dirFrom(wx, wy)); wx = wy = 0; }
+}, { passive: false });
+
+// ---- keyboard ----
+const KEYS = {
+  ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+  Enter: "select", Escape: "menu", Backspace: "menu", " ": "play_pause",
+  h: "home", "+": "volume_up", "=": "volume_up", "-": "volume_down", "_": "volume_down",
+  "[": "skip_backward", "]": "skip_forward", p: "power",
+};
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (document.querySelector(".overlay.show")) return;
+  const cmd = KEYS[e.key] ?? KEYS[e.key.toLowerCase()];
+  if (!cmd) return;
+  e.preventDefault();
+  send(cmd, document.querySelector(`[data-cmd="${cmd}"]`));
+});
+
+// ---- device picker / more ----
+$("device").addEventListener("change", async (e) => {
+  pairing = null;
+  try { render(await api("POST device", { id: e.target.value })); } catch (err) { toast(err.message); }
+});
+$("rescan").addEventListener("click", async () => {
+  toast("Scanning…");
+  try { render(await api("POST scan")); toast("Scan complete"); } catch (e) { toast(e.message); }
+});
+$("more").addEventListener("toggle", () => { if ($("more").open) loadApps(); });
+async function loadApps() {
+  if (!state || state.status !== "connected" || appsLoadedFor === state.current) return;
+  try {
+    const apps = await api("apps");
+    $("apps").innerHTML = '<option value="">Apps…</option>' +
+      apps.map((a) => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join("");
+    appsLoadedFor = state.current;
+  } catch (e) { toast(e.message); }
+}
+$("launch").addEventListener("click", async () => {
+  const id = $("apps").value; if (!id) return;
+  try { await api("POST apps/launch", { id }); } catch (e) { toast(e.message); }
+});
+$("textform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try { await api("POST text", { text: $("text").value }); toast("Sent"); }
+  catch (err) { toast(err.message); }
+});
+
+// ---- pairing overlay ----
+function overlay(html) {
+  const o = $("overlay");
+  if (!html) { o.classList.remove("show"); o.innerHTML = ""; o.dataset.key = ""; return; }
+  if (o.dataset.key === html) return;   // avoid clobbering an input being typed in
+  o.dataset.key = html; o.innerHTML = html; o.classList.add("show");
+}
+async function pairStart() {
+  if (pairBusy) return; pairBusy = true;
+  overlay(`<div class="spinner"></div><p>Asking ${escapeHtml(state.current_name)} for a PIN…</p>`);
+  try {
+    const res = await api("POST pair/start", { id: state.current });
+    const dev = state.devices.find((d) => d.id === state.current);
+    const total = (dev && !dev.metadata_paired ? 1 : 0) + (dev && !dev.paired ? 1 : 0);
+    pairing = res.done ? null : { protocol: res.protocol, step: 1, total: Math.max(total, 1) };
+  } catch (e) { toast(e.message); pairing = null; }
+  pairBusy = false; renderOverlay();
+}
+async function pairPin(pin) {
+  if (pairBusy) return; pairBusy = true;
+  overlay(`<div class="spinner"></div><p>Pairing…</p>`);
+  try {
+    const res = await api("POST pair/pin", { pin });
+    pairing = res.done ? null : { ...pairing, protocol: res.protocol, step: pairing.step + 1 };
+    if (res.done) toast("Paired ✓");
+  } catch (e) { toast(e.message); pairing = null; }
+  pairBusy = false; await poll();
+}
+async function pairCancel() {
+  pairing = null; overlay(null);
+  try { await api("POST pair/cancel"); } catch {}
+  poll();
+}
+function renderOverlay() {
+  if (pairBusy) return;
+  if (pairing) {
+    const what = pairing.protocol === "AirPlay" ? "now-playing info" : "remote control";
+    overlay(`
+      <h2>Enter the PIN on ${escapeHtml(state?.current_name || "your TV")}</h2>
+      <p>Step ${pairing.step} of ${pairing.total} · ${pairing.protocol} (${what})</p>
+      <form id="pinform" style="display:grid;gap:12px;justify-items:center">
+        <input class="pin" id="pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="one-time-code" autofocus>
+        <div class="row"><button type="button" class="pill" id="pincancel">Cancel</button>
+        <button class="pill primary">Pair</button></div>
+      </form>`);
+    const pin = $("pin");
+    if (pin && !pin.dataset.wired) {
+      pin.dataset.wired = 1; setTimeout(() => pin.focus(), 30);
+      pin.addEventListener("input", () => { if (/^\d{4}$/.test(pin.value)) pairPin(pin.value); });
+      $("pinform").addEventListener("submit", (e) => { e.preventDefault(); pairPin(pin.value); });
+      $("pincancel").addEventListener("click", pairCancel);
+    }
+    return;
+  }
+  if (!state) return overlay(`<div class="spinner"></div><p>Starting…</p>`);
+  const s = state.status;
+  if (s === "starting" || s === "scanning") return overlay(`<div class="spinner"></div><p>Looking for Apple TVs…</p>`);
+  if (!state.devices.length) return overlay(`<h2>No Apple TV found</h2><p>Make sure it's on the same network.</p><button class="pill" onclick="$('rescan').click()">Scan again</button>`);
+  if (s === "unpaired") {
+    overlay(`<h2>Pair with ${escapeHtml(state.current_name)}</h2>
+      <p>The TV will show a 4-digit code. You'll enter two codes: one for now-playing info, one for the remote.</p>
+      <button class="pill primary" id="pairbtn">Start pairing</button>`);
+    const b = $("pairbtn"); if (b && !b.dataset.wired) { b.dataset.wired = 1; b.addEventListener("click", pairStart); }
+    return;
+  }
+  if (s === "connecting") return overlay(`<div class="spinner"></div><p>Connecting to ${escapeHtml(state.current_name)}…</p>`);
+  if (s === "offline") return overlay(`<h2>Can't reach ${escapeHtml(state.current_name)}</h2><p>${escapeHtml(state.error || "Retrying…")}</p>`);
+  overlay(null);
+}
+
+// ---- render ----
+function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function fmt(t) { if (t == null) return ""; t = Math.round(t); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; }
+
+function render(s) {
+  state = s;
+  $("dot").className = "dot " + s.status;
+  $("dot").title = s.status;
+  const sel = $("device");
+  const opts = s.devices.map((d) => `<option value="${d.id}">${escapeHtml(d.name)}${d.paired ? "" : " (not paired)"}</option>`).join("");
+  if (sel.dataset.opts !== opts) { sel.innerHTML = opts || "<option>No Apple TV</option>"; sel.dataset.opts = opts; }
+  if (s.current) sel.value = s.current;
+  $("power").classList.toggle("on", s.power === "on");
+
+  const p = s.playing;
+  if (p && (p.title || s.app)) {
+    $("np-title").textContent = p.title || s.app;
+    const who = p.artist || (p.series !== p.title ? p.series : null);
+    $("np-sub").textContent = [who, p.title ? s.app : null].filter(Boolean).join(" · ") +
+      (p.total ? `  ${fmt(p.position)} / ${fmt(p.total)}` : "") || p.state;
+    $("np-bar").style.width = p.total ? `${Math.min(100, (100 * (p.position || 0)) / p.total)}%` : "0";
+  } else {
+    $("np-title").textContent = s.app || (s.power === "off" ? "Asleep" : "Nothing playing");
+    $("np-sub").innerHTML = s.status === "connected" && !s.devices.find((d) => d.id === s.current)?.metadata_paired
+      ? "Pair AirPlay for now-playing info" : "&nbsp;";
+    $("np-bar").style.width = "0";
+  }
+  const art = $("art");
+  if (s.artwork_id && art.dataset.id !== s.artwork_id) {
+    art.dataset.id = s.artwork_id;
+    art.onload = () => { art.hidden = false; $("art-ph").hidden = true; };
+    art.onerror = () => { art.hidden = true; $("art-ph").hidden = false; };
+    art.src = "/api/artwork?id=" + encodeURIComponent(s.artwork_id);
+  } else if (!s.artwork_id) { art.hidden = true; art.dataset.id = ""; $("art-ph").hidden = false; }
+  renderOverlay();
+}
+
+let pollTimer;
+async function poll() {
+  clearTimeout(pollTimer);
+  try { render(await api("state")); } catch { $("dot").className = "dot error"; }
+  const fast = !state || ["starting", "scanning", "connecting"].includes(state.status);
+  pollTimer = setTimeout(poll, fast ? 600 : 1500);
+}
+poll();
+pad.focus();
+</script>
+</body>
+</html>

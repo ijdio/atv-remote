@@ -73,7 +73,7 @@ def test_controller_errors_become_json_400() -> None:
 
 
 def test_every_ui_command_exists() -> None:
-    html = files("atv_remote").joinpath("static/index.html").read_text()
+    html = files("atv_remote").joinpath("static/index.html").read_text(encoding="utf-8")
     buttons = set(re.findall(r'data-(?:cmd|hold)="([a-z_]+)"', html))
     keymap = re.search(r"const KEYS = \{(.*?)\};", html, re.S)
     assert keymap, "KEYS map not found in index.html"

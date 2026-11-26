@@ -170,8 +170,8 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyatv" },
-    { name = "pyobjc-framework-webkit" },
-    { name = "rumps" },
+    { name = "pyobjc-framework-webkit", marker = "sys_platform == 'darwin'" },
+    { name = "rumps", marker = "sys_platform == 'darwin'" },
     { name = "srptools" },
 ]
 
@@ -184,8 +184,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pyatv", specifier = ">=0.18.0" },
-    { name = "pyobjc-framework-webkit", specifier = ">=13.0" },
-    { name = "rumps", specifier = ">=0.4.0" },
+    { name = "pyobjc-framework-webkit", marker = "sys_platform == 'darwin'", specifier = ">=13.0" },
+    { name = "rumps", marker = "sys_platform == 'darwin'", specifier = ">=0.4.0" },
     { name = "srptools", specifier = ">=1.0,<2" },
 ]
 

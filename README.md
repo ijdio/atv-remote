@@ -92,6 +92,14 @@ The server listens on 127.0.0.1 only. It rejects requests with an unexpected
 `Host` header (DNS rebinding) and button presses without the custom
 `X-ATV-Remote` header, so other websites can't drive your TV.
 
+### Headless on Windows and Linux
+
+The web remote also runs on Windows and Linux:
+`uv tool install git+https://github.com/ijdio/atv-remote`, then `atv-remote-web`.
+The menu bar app stays macOS-only. If no Apple TVs show up, the firewall is
+probably blocking mDNS discovery: on Windows, allow Python on the Private network
+profile.
+
 ## Troubleshooting
 
 - **No Apple TV found:** the Mac and the Apple TV must be on the same network

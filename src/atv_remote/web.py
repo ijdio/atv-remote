@@ -44,7 +44,9 @@ def build_app(ctl: Controller) -> web.Application:
 
     @routes.get("/")
     async def index(_: web.Request) -> web.Response:
-        return web.Response(text=page.read_text(), content_type="text/html")
+        return web.Response(
+            text=page.read_text(encoding="utf-8"), content_type="text/html"
+        )
 
     @routes.get("/api/state")
     async def state(_: web.Request) -> web.Response:

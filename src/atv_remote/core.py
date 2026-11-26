@@ -405,11 +405,11 @@ class Controller(PushListener, PowerListener, DeviceListener):
     @staticmethod
     def _load_settings() -> dict[str, Any]:
         try:
-            return json.loads(SETTINGS_PATH.read_text())
+            return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return {}
 
     @staticmethod
     def _save_settings(data: dict[str, Any]) -> None:
         SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SETTINGS_PATH.write_text(json.dumps(data))
+        SETTINGS_PATH.write_text(json.dumps(data), encoding="utf-8")
